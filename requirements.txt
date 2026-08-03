@@ -4,3 +4,5 @@ pyperclip==1.8.2
 sounddevice==0.4.7
 numpy==1.26.4
 requests==2.32.3
+pystray==0.19.5
+Pillow==10.4.0
