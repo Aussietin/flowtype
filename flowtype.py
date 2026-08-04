@@ -3,16 +3,17 @@ flowtype — local hold-to-talk dictation, no subscription.
 
 Hold the hotkey, speak, release — the transcript gets pasted at your cursor.
 Runs entirely on-device via faster-whisper (CTranslate2 Whisper). No audio
-or text ever leaves the machine.
+or text ever leaves the machine. Settings live in config.json.
 
 Usage:
     venv\\Scripts\\pythonw.exe flowtype.py   (background, tray icon, no console)
     venv\\Scripts\\python.exe flowtype.py    (console visible, for debugging)
 
 Hold Right Ctrl to talk, release to paste. Tray icon: grey = idle, red =
-recording, amber = transcribing, flashing red "!" = something errored (also
-fires a toast). Right-click the tray icon to quit, or tap Esc twice as a
-fallback (works even without the console open).
+recording, amber = transcribing, blue = LLM cleanup pass (if enabled),
+flashing red "!" = something errored (also fires a toast). Right-click the
+tray icon to quit, or tap Esc twice as a fallback (works even without the
+console open).
 """
 import ctypes
 import json
@@ -37,23 +38,19 @@ import pyperclip
 import sounddevice as sd
 from faster_whisper import WhisperModel
 
-from tray_indicator import Indicator, State, GREY, RED, AMBER
+import llm_cleanup
+from config import load_config
+from tray_indicator import Indicator, State, GREY, RED, AMBER, BLUE
 
+CFG = load_config()
 SAMPLE_RATE = 16000
-HOTKEY = "right ctrl"
-QUIT_KEY = "esc"
-MODEL_SIZE = "base.en"  # tiny.en / base.en / small.en — bigger = more accurate, slower
-DEVICE = "cpu"
-COMPUTE_TYPE = "int8"
-MAX_RECORD_SECONDS = 60  # safety valve — auto-stops a stuck/forgotten hold
-CLIPBOARD_RESTORE_DELAY = 0.25  # let the paste land before restoring old clipboard
 TRANSCRIPT_LOG = Path(__file__).resolve().parent / "logs" / "transcripts.jsonl"
 
 _recording = False
 _frames: list[np.ndarray] = []
 _stream: sd.InputStream | None = None
 _lock = threading.Lock()
-_status = "idle"  # idle | recording | transcribing
+_status = "idle"  # idle | recording | transcribing | cleaning
 _session = 0  # bumped on each start_recording, lets the watchdog tell old/new apart
 _error: str | None = None  # set on a failure, surfaced once by poll() as a toast
 
@@ -73,11 +70,11 @@ def _audio_callback(indata, _frames_count, _time_info, _status_flags):
 
 
 def _watchdog(model: WhisperModel, session: int):
-    time.sleep(MAX_RECORD_SECONDS)
+    time.sleep(CFG.max_record_seconds)
     with _lock:
         expired = _recording and _session == session
     if expired:
-        print(f"[flowtype] held past {MAX_RECORD_SECONDS}s, auto-stopping")
+        print(f"[flowtype] held past {CFG.max_record_seconds}s, auto-stopping")
         stop_recording_and_transcribe(model)
 
 
@@ -138,6 +135,15 @@ def stop_recording_and_transcribe(model: WhisperModel):
             return
 
         print(f"[flowtype] -> {text}")
+
+        if CFG.llm_cleanup.enabled:
+            with _lock:
+                _status = "cleaning"
+            cleaned = llm_cleanup.clean_up(text, CFG.llm_cleanup)
+            if cleaned != text:
+                print(f"[flowtype] cleaned -> {cleaned}")
+            text = cleaned
+
         _log_transcript(text)
         _paste(text)
     except Exception as e:
@@ -170,7 +176,7 @@ def _paste(text: str):
 
     if old_clip is not None:
         def _restore():
-            time.sleep(CLIPBOARD_RESTORE_DELAY)
+            time.sleep(CFG.clipboard_restore_delay)
             try:
                 pyperclip.copy(old_clip)
             except Exception:
@@ -197,8 +203,12 @@ def poll() -> State:
         return State(fraction=1.0, text="…", color=AMBER,
                      tooltip="flowtype — transcribing...",
                      menu_label="Transcribing...")
+    if status == "cleaning":
+        return State(fraction=1.0, text="✎", color=BLUE,
+                     tooltip="flowtype — cleaning up with local LLM...",
+                     menu_label="Cleaning up (LLM pass)...")
     return State(fraction=1.0, text="FT", color=GREY,
-                 tooltip=f"flowtype — idle (hold {HOTKEY} to talk)",
+                 tooltip=f"flowtype — idle (hold {CFG.hotkey} to talk)",
                  menu_label="Idle — hold Right Ctrl to talk")
 
 
@@ -220,13 +230,14 @@ def main():
     default_input = sd.query_devices(kind="input")
     print(f"[flowtype] mic: {default_input['name']}")
 
-    print(f"[flowtype] loading {MODEL_SIZE} model ({DEVICE}/{COMPUTE_TYPE})...")
-    model = WhisperModel(MODEL_SIZE, device=DEVICE, compute_type=COMPUTE_TYPE)
-    print(f"[flowtype] ready. Hold [{HOTKEY}] to talk, release to paste. "
-          f"Tap [{QUIT_KEY}] twice to quit.")
+    print(f"[flowtype] loading {CFG.model_size} model ({CFG.device}/{CFG.compute_type})...")
+    model = WhisperModel(CFG.model_size, device=CFG.device, compute_type=CFG.compute_type)
+    print(f"[flowtype] ready. Hold [{CFG.hotkey}] to talk, release to paste. "
+          f"Tap [{CFG.quit_key}] twice to quit. "
+          f"LLM cleanup: {'on' if CFG.llm_cleanup.enabled else 'off'}")
 
-    keyboard.on_press_key(HOTKEY, lambda _: start_recording(model))
-    keyboard.on_release_key(HOTKEY, lambda _: threading.Thread(
+    keyboard.on_press_key(CFG.hotkey, lambda _: start_recording(model))
+    keyboard.on_release_key(CFG.hotkey, lambda _: threading.Thread(
         target=stop_recording_and_transcribe, args=(model,), daemon=True
     ).start())
 
@@ -240,7 +251,7 @@ def main():
             os._exit(0)  # hard exit — also tears down the tray icon's loop
         last_esc = now
 
-    keyboard.on_press_key(QUIT_KEY, _on_esc)
+    keyboard.on_press_key(CFG.quit_key, _on_esc)
 
     Indicator("flowtype", poll, poll_seconds=1).run()
 

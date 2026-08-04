@@ -61,7 +61,7 @@ def test_clipboard_save_and_restore(monkeypatch):
         assert flowtype.pyperclip.paste() == "dictated text"
         assert sent == ["ctrl+v"]
 
-        time.sleep(flowtype.CLIPBOARD_RESTORE_DELAY + 0.3)
+        time.sleep(flowtype.CFG.clipboard_restore_delay + 0.3)
         assert flowtype.pyperclip.paste() == "pre-existing clipboard content"
     finally:
         flowtype.pyperclip.copy(real_original)
@@ -122,7 +122,7 @@ def test_double_stop_only_transcribes_once():
 
 
 def test_watchdog_auto_stops_a_forgotten_hold(monkeypatch):
-    monkeypatch.setattr(flowtype, "MAX_RECORD_SECONDS", 1)
+    monkeypatch.setattr(flowtype.CFG, "max_record_seconds", 1)
     monkeypatch.setattr(flowtype.keyboard, "send", lambda combo: None)
 
     flowtype.start_recording(FakeModel())
@@ -137,20 +137,62 @@ def test_transcript_gets_logged(tmp_path, monkeypatch):
     log_path = tmp_path / "transcripts.jsonl"
     monkeypatch.setattr(flowtype, "TRANSCRIPT_LOG", log_path)
     monkeypatch.setattr(flowtype.keyboard, "send", lambda combo: None)
+    monkeypatch.setattr(flowtype.pyperclip, "copy", lambda t: None)
+    monkeypatch.setattr(flowtype.pyperclip, "paste", lambda: "unrelated clipboard content")
 
-    real_original = flowtype.pyperclip.paste()
-    try:
-        flowtype._recording = True
-        flowtype._frames = [np.zeros((16000, 1), dtype=np.float32)]
-        flowtype.stop_recording_and_transcribe(FakeModel(text="testing one two three"))
-    finally:
-        flowtype.pyperclip.copy(real_original)
+    flowtype._recording = True
+    flowtype._frames = [np.zeros((16000, 1), dtype=np.float32)]
+    flowtype.stop_recording_and_transcribe(FakeModel(text="testing one two three"))
 
     lines = log_path.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 1
     entry = json.loads(lines[0])
     assert entry["text"] == "testing one two three"
     assert "ts" in entry
+
+
+def test_llm_cleanup_runs_when_enabled_and_status_shows_cleaning(monkeypatch):
+    # Mock pyperclip entirely rather than touching the real clipboard — the
+    # background restore thread from _paste() outlives a single test and was
+    # racing with other tests' clipboard assertions in the same run.
+    copied = []
+    monkeypatch.setattr(flowtype.pyperclip, "copy", lambda t: copied.append(t))
+    monkeypatch.setattr(flowtype.pyperclip, "paste", lambda: "unrelated clipboard content")
+    monkeypatch.setattr(flowtype.CFG.llm_cleanup, "enabled", True)
+    monkeypatch.setattr(flowtype.keyboard, "send", lambda combo: None)
+
+    seen_status_during_cleanup = []
+
+    def _fake_clean_up(text, cfg):
+        seen_status_during_cleanup.append(flowtype._status)
+        return text.upper()
+
+    monkeypatch.setattr(flowtype.llm_cleanup, "clean_up", _fake_clean_up)
+
+    flowtype._recording = True
+    flowtype._frames = [np.zeros((16000, 1), dtype=np.float32)]
+    flowtype.stop_recording_and_transcribe(FakeModel(text="lower case text"))
+
+    assert seen_status_during_cleanup == ["cleaning"]
+    assert copied[0] == "LOWER CASE TEXT"
+
+
+def test_llm_cleanup_skipped_when_disabled(monkeypatch):
+    copied = []
+    monkeypatch.setattr(flowtype.pyperclip, "copy", lambda t: copied.append(t))
+    monkeypatch.setattr(flowtype.pyperclip, "paste", lambda: "unrelated clipboard content")
+    monkeypatch.setattr(flowtype.CFG.llm_cleanup, "enabled", False)
+    monkeypatch.setattr(flowtype.keyboard, "send", lambda combo: None)
+
+    def _should_not_be_called(text, cfg):
+        raise AssertionError("clean_up should not run when disabled")
+    monkeypatch.setattr(flowtype.llm_cleanup, "clean_up", _should_not_be_called)
+
+    flowtype._recording = True
+    flowtype._frames = [np.zeros((16000, 1), dtype=np.float32)]
+    flowtype.stop_recording_and_transcribe(FakeModel(text="raw text"))
+
+    assert copied[0] == "raw text"
 
 
 def test_singleton_mutex_detects_second_instance():

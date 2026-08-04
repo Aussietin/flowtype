@@ -1,0 +1,16 @@
+{
+  "hotkey": "right ctrl",
+  "quit_key": "esc",
+  "model_size": "base.en",
+  "device": "cpu",
+  "compute_type": "int8",
+  "max_record_seconds": 60,
+  "clipboard_restore_delay": 0.25,
+  "llm_cleanup": {
+    "enabled": false,
+    "ollama_host": "http://localhost:11434",
+    "model": "qwen2.5:3b",
+    "timeout_seconds": 10,
+    "known_terms": ["Claude Code", "flowtype", "Ops Center", "RCP", "ratoon", "CCS"]
+  }
+}
