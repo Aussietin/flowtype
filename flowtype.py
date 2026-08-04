@@ -220,7 +220,7 @@ def poll() -> State:
         return State(fraction=1.0, text="✎", color=BLUE,
                      tooltip="flowtype — cleaning up with local LLM...",
                      menu_label="Cleaning up (LLM pass)...")
-    return State(fraction=1.0, text="FT", color=GREY,
+    return State(fraction=1.0, text="", color=GREY,
                  tooltip=f"flowtype — idle (hold {_hotkey_display} to talk)",
                  menu_label=f"Idle — hold {_hotkey_display} to talk")
 
@@ -279,7 +279,7 @@ def main():
 
     keyboard.on_press_key(CFG.quit_key, _on_esc)
 
-    Indicator("flowtype", poll, poll_seconds=1).run()
+    Indicator("flowtype", poll, poll_seconds=1, shape="diamond").run()
 
 
 if __name__ == "__main__":
