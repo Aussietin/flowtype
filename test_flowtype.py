@@ -19,15 +19,19 @@ import flowtype
 
 @pytest.fixture(autouse=True)
 def reset_state():
+    # _stream defaults to a truthy sentinel: in real usage main() opens the
+    # persistent stream before any hotkey press is possible, so that's the
+    # normal state start_recording() sees. Tests for the "no mic" path set
+    # it to None explicitly.
     flowtype._recording = False
     flowtype._frames = []
-    flowtype._stream = None
+    flowtype._stream = object()
     flowtype._status = "idle"
     flowtype._error = None
     yield
     flowtype._recording = False
     flowtype._frames = []
-    flowtype._stream = None
+    flowtype._stream = object()
     flowtype._status = "idle"
     flowtype._error = None
 
@@ -68,13 +72,15 @@ def test_clipboard_save_and_restore(monkeypatch):
 
 
 def test_mic_open_failure_reports_error_and_does_not_stick(monkeypatch):
+    """Mic is opened once at startup now (_open_persistent_stream), not per
+    hotkey press — this is where an unavailable/blocked mic actually fails."""
     def _boom(*a, **kw):
         raise RuntimeError("no such device")
     monkeypatch.setattr(flowtype.sd, "InputStream", _boom)
 
-    flowtype.start_recording(FakeModel())
+    result = flowtype._open_persistent_stream()
 
-    assert flowtype._recording is False
+    assert result is None
     assert flowtype._status == "idle"
 
     state = flowtype.poll()
@@ -84,6 +90,20 @@ def test_mic_open_failure_reports_error_and_does_not_stick(monkeypatch):
 
     state2 = flowtype.poll()  # error is one-shot
     assert state2.color == flowtype.GREY
+
+
+def test_start_recording_refuses_when_no_stream_available():
+    """If the persistent stream failed to open at startup, every hotkey
+    press should fail cleanly rather than trying (and failing) to open a
+    fresh one each time."""
+    flowtype._stream = None
+
+    flowtype.start_recording(FakeModel())
+
+    assert flowtype._recording is False
+    state = flowtype.poll()
+    assert state.color == flowtype.RED
+    assert "no microphone" in state.tooltip
 
 
 def test_transcription_failure_reports_error_and_resets_status():

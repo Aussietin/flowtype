@@ -78,8 +78,35 @@ def _watchdog(model: WhisperModel, session: int):
         stop_recording_and_transcribe(model)
 
 
+def _open_persistent_stream() -> sd.InputStream | None:
+    """Opened once at startup and left running for the app's lifetime.
+    Opening an audio device has real latency (tens-hundreds of ms) — doing
+    it fresh on every hotkey press clipped the first ~0.1-0.3s of speech,
+    confirmed 2026-08-04 (a dictation's opening words were reliably lost).
+    Keeping one stream open means start_recording() just flips a flag —
+    the callback is already running, so capture begins on the very next
+    audio buffer instead of waiting on device init.
+
+    Tradeoff: Windows shows its "microphone in use" indicator the whole
+    time flowtype runs, not just while actively recording. Traded
+    deliberately for zero-latency capture start.
+    """
+    try:
+        stream = sd.InputStream(
+            samplerate=SAMPLE_RATE, channels=1, dtype="float32", callback=_audio_callback
+        )
+        stream.start()
+        return stream
+    except Exception as e:
+        _report_error(f"couldn't open microphone: {e}")
+        return None
+
+
 def start_recording(model: WhisperModel):
-    global _recording, _frames, _stream, _status, _session
+    global _recording, _frames, _status, _session
+    if _stream is None:
+        _report_error("no microphone available")
+        return
     with _lock:
         if _recording:
             return
@@ -88,32 +115,17 @@ def start_recording(model: WhisperModel):
         _status = "recording"
         _session += 1
         session = _session
-    try:
-        stream = sd.InputStream(
-            samplerate=SAMPLE_RATE, channels=1, dtype="float32", callback=_audio_callback
-        )
-        stream.start()
-    except Exception as e:
-        with _lock:
-            _recording = False
-        _report_error(f"couldn't open microphone: {e}")
-        return
-    _stream = stream
     threading.Thread(target=_watchdog, args=(model, session), daemon=True).start()
     print("[flowtype] listening...")
 
 
 def stop_recording_and_transcribe(model: WhisperModel):
-    global _recording, _stream, _status
+    global _recording, _status
     with _lock:
         if not _recording:
             return
         _recording = False
         _status = "transcribing"
-    if _stream is not None:
-        _stream.stop()
-        _stream.close()
-        _stream = None
 
     try:
         if not _frames:
@@ -225,10 +237,16 @@ def _acquire_singleton_or_exit():
 
 
 def main():
+    global _stream
     _acquire_singleton_or_exit()
 
     default_input = sd.query_devices(kind="input")
     print(f"[flowtype] mic: {default_input['name']}")
+
+    _stream = _open_persistent_stream()
+    if _stream is None:
+        print("[flowtype] starting anyway so the tray shows the error — "
+              "recording will fail until a mic is available")
 
     print(f"[flowtype] loading {CFG.model_size} model ({CFG.device}/{CFG.compute_type})...")
     model = WhisperModel(CFG.model_size, device=CFG.device, compute_type=CFG.compute_type)
