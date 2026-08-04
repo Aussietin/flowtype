@@ -27,3 +27,25 @@ cursor in whatever window has focus. Tap **Esc** twice to quit.
   `small.en` for better accuracy at the cost of latency.
 - No cleanup LLM pass yet (Wispr Flow polishes filler words/punctuation via
   an LLM) — raw Whisper output only for now.
+- Clipboard is saved and restored around the paste — dictating doesn't
+  destroy whatever you had copied.
+- Only one instance can run at a time (Windows named mutex) — a second
+  launch shows a message box and exits instead of double-pasting.
+- A held hotkey auto-stops and transcribes after 60s (`MAX_RECORD_SECONDS`)
+  so a forgotten hold can't run away with memory.
+- Every transcript is appended to `logs/transcripts.jsonl` (gitignored,
+  local only) — raw material for turning into SOPs later.
+- Mic-open and transcription failures surface as a red "!" tray icon + a
+  one-shot toast instead of failing silently.
+
+## Tests
+
+```
+venv\Scripts\pip install -r requirements-dev.txt
+venv\Scripts\python.exe -m pytest test_flowtype.py -v
+```
+
+Covers the failure modes above (clipboard restore, mic-open failure,
+transcription failure, double-stop safety, the watchdog, transcript
+logging, the singleton mutex) — not a full suite, just what's broken or
+could break.
