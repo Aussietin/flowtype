@@ -1,6 +1,20 @@
 """Loads config.json. Never crashes on a missing/malformed file — every
 field falls back to its default independently, so a partial config
-(e.g. just {"model_size": "small.en"}) works fine."""
+(e.g. just {"model_size": "small.en"}) works fine.
+
+`hotkeys` default is ["caps lock"], not a Ctrl/Alt/Shift variant. Confirmed
+2026-08-04: the `keyboard` library's Windows backend maps "right ctrl" to
+scan codes (57629, 29, 57373) — scan code 29 bare, with no side/extended
+info, which is also *all* of what "left ctrl" maps to. So an "on right
+ctrl" hook also fires on left ctrl (same bug for right/left alt: both
+share bare scan code 56). Left ctrl held briefly, e.g. during Ctrl+C,
+produces a sub-0.3s clip flowtype already discards — which is why this
+went unnoticed for a while. Right/left shift and right/left windows don't
+have this overlap and would work, but shift is used constantly during
+normal typing. Caps lock has no sided pair to be ambiguous with, and
+flowtype.py hooks it with suppress=True so holding it doesn't also toggle
+caps state — the tradeoff is losing the real caps-lock-toggle while
+flowtype is running."""
 import json
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -19,7 +33,7 @@ class LLMCleanupConfig:
 
 @dataclass
 class Config:
-    hotkeys: list = field(default_factory=lambda: ["right ctrl"])
+    hotkeys: list = field(default_factory=lambda: ["caps lock"])
     quit_key: str = "esc"
     model_size: str = "base.en"
     device: str = "cpu"

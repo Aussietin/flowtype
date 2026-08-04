@@ -28,7 +28,7 @@ def test_partial_config_merges_with_defaults(tmp_path, monkeypatch):
 
     cfg = load_config()
     assert cfg.model_size == "small.en"
-    assert cfg.hotkeys == ["right ctrl"]  # untouched default
+    assert cfg.hotkeys == ["caps lock"]  # untouched default
     assert cfg.llm_cleanup == LLMCleanupConfig()  # untouched default
 
 

@@ -1,5 +1,5 @@
 {
-  "hotkeys": ["right ctrl", "right alt"],
+  "hotkeys": ["caps lock"],
   "quit_key": "esc",
   "model_size": "base.en",
   "device": "cpu",

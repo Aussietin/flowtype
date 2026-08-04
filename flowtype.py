@@ -255,11 +255,17 @@ def main():
           f"Tap [{CFG.quit_key}] twice to quit. "
           f"LLM cleanup: {'on' if CFG.llm_cleanup.enabled else 'off'}")
 
+    # suppress=True stops the key's normal OS effect (needed for caps lock,
+    # the default hotkey, so holding it doesn't also toggle caps state) —
+    # see config.py's module docstring before configuring "right ctrl" or
+    # "right alt" here: the `keyboard` library can't reliably tell those
+    # apart from their left-hand counterparts, and suppress would block the
+    # left key's normal use too.
     for key in CFG.hotkeys:
-        keyboard.on_press_key(key, lambda _: start_recording(model))
+        keyboard.on_press_key(key, lambda _: start_recording(model), suppress=True)
         keyboard.on_release_key(key, lambda _: threading.Thread(
             target=stop_recording_and_transcribe, args=(model,), daemon=True
-        ).start())
+        ).start(), suppress=True)
 
     last_esc = 0.0
 

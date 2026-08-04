@@ -19,7 +19,7 @@ venv\Scripts\pip install -r requirements.txt
 venv\Scripts\python.exe flowtype.py
 ```
 
-Hold **Right Ctrl** (or any configured hotkey), speak, release — the
+Hold **Caps Lock** (or any configured hotkey), speak, release — the
 transcript is pasted at your cursor in whatever window has focus. Tap
 **Esc** twice to quit.
 
@@ -29,7 +29,7 @@ Settings live in `config.json`, not hardcoded constants:
 
 ```json
 {
-  "hotkeys": ["right ctrl", "right alt"],
+  "hotkeys": ["caps lock"],
   "model_size": "base.en",
   "max_record_seconds": 60,
   "llm_cleanup": {
@@ -44,8 +44,15 @@ Missing file or missing/malformed individual keys all fall back to defaults
 independently — a partial config never crashes startup.
 
 `hotkeys` accepts a list — any key in it triggers recording, so one config
-works across keyboards that don't all have the same keys (e.g. a laptop
-keyboard with no dedicated Right Ctrl, docked to a USB keyboard that does).
+can work across keyboards that don't all have the same keys. Caps Lock was
+picked as the default over Right Ctrl/Right Alt (tried first, since a
+laptop keyboard commonly lacks a distinct Right Ctrl) because the
+`keyboard` library can't reliably tell right-side Ctrl/Alt apart from their
+left-side counterparts on Windows — see `config.py`'s docstring for the
+scan-code details. Caps Lock has no left/right pair to confuse it with, and
+flowtype hooks it with `suppress=True` so holding it doesn't also toggle
+caps state (the tradeoff: real caps-lock-toggle doesn't work while
+flowtype is running).
 
 ### Optional LLM cleanup pass
 
