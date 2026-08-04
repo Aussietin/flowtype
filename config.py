@@ -19,7 +19,7 @@ class LLMCleanupConfig:
 
 @dataclass
 class Config:
-    hotkey: str = "right ctrl"
+    hotkeys: list = field(default_factory=lambda: ["right ctrl"])
     quit_key: str = "esc"
     model_size: str = "base.en"
     device: str = "cpu"
@@ -49,8 +49,13 @@ def load_config() -> Config:
         timeout_seconds=llm_raw.get("timeout_seconds", llm_defaults.timeout_seconds),
         known_terms=llm_raw.get("known_terms", llm_defaults.known_terms),
     )
+    hotkeys = raw.get("hotkeys")
+    if hotkeys is None:
+        legacy_hotkey = raw.get("hotkey")
+        hotkeys = [legacy_hotkey] if legacy_hotkey else defaults.hotkeys
+
     return Config(
-        hotkey=raw.get("hotkey", defaults.hotkey),
+        hotkeys=hotkeys,
         quit_key=raw.get("quit_key", defaults.quit_key),
         model_size=raw.get("model_size", defaults.model_size),
         device=raw.get("device", defaults.device),

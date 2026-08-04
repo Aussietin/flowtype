@@ -9,7 +9,7 @@ Usage:
     venv\\Scripts\\pythonw.exe flowtype.py   (background, tray icon, no console)
     venv\\Scripts\\python.exe flowtype.py    (console visible, for debugging)
 
-Hold Right Ctrl to talk, release to paste. Tray icon: grey = idle, red =
+Hold the configured hotkey(s) to talk, release to paste. Tray icon: grey = idle, red =
 recording, amber = transcribing, blue = LLM cleanup pass (if enabled),
 flashing red "!" = something errored (also fires a toast). Right-click the
 tray icon to quit, or tap Esc twice as a fallback (works even without the
@@ -43,6 +43,7 @@ from config import load_config
 from tray_indicator import Indicator, State, GREY, RED, AMBER, BLUE
 
 CFG = load_config()
+_hotkey_display = " / ".join(CFG.hotkeys)
 SAMPLE_RATE = 16000
 TRANSCRIPT_LOG = Path(__file__).resolve().parent / "logs" / "transcripts.jsonl"
 
@@ -220,8 +221,8 @@ def poll() -> State:
                      tooltip="flowtype — cleaning up with local LLM...",
                      menu_label="Cleaning up (LLM pass)...")
     return State(fraction=1.0, text="FT", color=GREY,
-                 tooltip=f"flowtype — idle (hold {CFG.hotkey} to talk)",
-                 menu_label="Idle — hold Right Ctrl to talk")
+                 tooltip=f"flowtype — idle (hold {_hotkey_display} to talk)",
+                 menu_label=f"Idle — hold {_hotkey_display} to talk")
 
 
 def _acquire_singleton_or_exit():
@@ -250,14 +251,15 @@ def main():
 
     print(f"[flowtype] loading {CFG.model_size} model ({CFG.device}/{CFG.compute_type})...")
     model = WhisperModel(CFG.model_size, device=CFG.device, compute_type=CFG.compute_type)
-    print(f"[flowtype] ready. Hold [{CFG.hotkey}] to talk, release to paste. "
+    print(f"[flowtype] ready. Hold [{_hotkey_display}] to talk, release to paste. "
           f"Tap [{CFG.quit_key}] twice to quit. "
           f"LLM cleanup: {'on' if CFG.llm_cleanup.enabled else 'off'}")
 
-    keyboard.on_press_key(CFG.hotkey, lambda _: start_recording(model))
-    keyboard.on_release_key(CFG.hotkey, lambda _: threading.Thread(
-        target=stop_recording_and_transcribe, args=(model,), daemon=True
-    ).start())
+    for key in CFG.hotkeys:
+        keyboard.on_press_key(key, lambda _: start_recording(model))
+        keyboard.on_release_key(key, lambda _: threading.Thread(
+            target=stop_recording_and_transcribe, args=(model,), daemon=True
+        ).start())
 
     last_esc = 0.0
 

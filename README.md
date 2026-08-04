@@ -19,8 +19,9 @@ venv\Scripts\pip install -r requirements.txt
 venv\Scripts\python.exe flowtype.py
 ```
 
-Hold **Right Ctrl**, speak, release — the transcript is pasted at your
-cursor in whatever window has focus. Tap **Esc** twice to quit.
+Hold **Right Ctrl** (or any configured hotkey), speak, release — the
+transcript is pasted at your cursor in whatever window has focus. Tap
+**Esc** twice to quit.
 
 ## Configuration
 
@@ -28,7 +29,7 @@ Settings live in `config.json`, not hardcoded constants:
 
 ```json
 {
-  "hotkey": "right ctrl",
+  "hotkeys": ["right ctrl", "right alt"],
   "model_size": "base.en",
   "max_record_seconds": 60,
   "llm_cleanup": {
@@ -41,6 +42,10 @@ Settings live in `config.json`, not hardcoded constants:
 
 Missing file or missing/malformed individual keys all fall back to defaults
 independently — a partial config never crashes startup.
+
+`hotkeys` accepts a list — any key in it triggers recording, so one config
+works across keyboards that don't all have the same keys (e.g. a laptop
+keyboard with no dedicated Right Ctrl, docked to a USB keyboard that does).
 
 ### Optional LLM cleanup pass
 

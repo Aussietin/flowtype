@@ -1,5 +1,5 @@
 {
-  "hotkey": "right ctrl",
+  "hotkeys": ["right ctrl", "right alt"],
   "quit_key": "esc",
   "model_size": "base.en",
   "device": "cpu",
