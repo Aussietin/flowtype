@@ -3,6 +3,6 @@ keyboard==0.13.5
 pyperclip==1.8.2
 sounddevice==0.4.7
 numpy==1.26.4
-requests==2.32.3
+requests==2.33.0
 pystray==0.19.5
 Pillow==12.3.0
