@@ -109,3 +109,13 @@ logging, the LLM cleanup on/off integration, the singleton mutex),
 `test_llm_cleanup.py` (Ollama unreachable, timeout, HTTP error, unreliable
 reply, malformed JSON — every failure mode falls back to the raw
 transcript). Not a full suite, just what's broken or could break.
+
+## Platform
+
+Windows only. Hotkey capture (`keyboard`), audio (`sounddevice`), the tray
+icon (`pystray`) and the clipboard paste path are all wired for Windows;
+Linux/macOS would need ported equivalents.
+
+## License
+
+MIT
