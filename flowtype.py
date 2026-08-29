@@ -22,7 +22,6 @@ import sys
 import threading
 import time
 from datetime import datetime, timezone
-from pathlib import Path
 
 # pythonw.exe has no console attached, so sys.stdout/stderr are None — any
 # print() would crash on the first call. Redirect to devnull so logging is a
@@ -39,13 +38,14 @@ import sounddevice as sd
 from faster_whisper import WhisperModel
 
 import llm_cleanup
+import paths
 from config import load_config
 from tray_indicator import Indicator, State, GREY, RED, AMBER, BLUE
 
 CFG = load_config()
 _hotkey_display = " / ".join(CFG.hotkeys)
 SAMPLE_RATE = 16000
-TRANSCRIPT_LOG = Path(__file__).resolve().parent / "logs" / "transcripts.jsonl"
+TRANSCRIPT_LOG = paths.TRANSCRIPT_LOG
 
 _recording = False
 _frames: list[np.ndarray] = []
@@ -249,8 +249,10 @@ def main():
         print("[flowtype] starting anyway so the tray shows the error — "
               "recording will fail until a mic is available")
 
-    print(f"[flowtype] loading {CFG.model_size} model ({CFG.device}/{CFG.compute_type})...")
-    model = WhisperModel(CFG.model_size, device=CFG.device, compute_type=CFG.compute_type)
+    model_ref = str(paths.MODEL_DIR) if paths.MODEL_DIR else CFG.model_size
+    source = "bundled" if paths.MODEL_DIR else "Hugging Face cache"
+    print(f"[flowtype] loading {CFG.model_size} model from {source} ({CFG.device}/{CFG.compute_type})...")
+    model = WhisperModel(model_ref, device=CFG.device, compute_type=CFG.compute_type)
     print(f"[flowtype] ready. Hold [{_hotkey_display}] to talk, release to paste. "
           f"Tap [{CFG.quit_key}] twice to quit. "
           f"LLM cleanup: {'on' if CFG.llm_cleanup.enabled else 'off'}")

@@ -23,6 +23,14 @@ Hold **Caps Lock** (or any configured hotkey), speak, release — the
 transcript is pasted at your cursor in whatever window has focus. Tap
 **Esc** twice to quit.
 
+## Installer (for a non-technical machine)
+
+`docs/build-installer.md` builds `flowtype-setup.exe` — a per-user installer
+(no admin prompt) that **bundles the `base.en` model**, so the target machine
+never downloads anything. Frozen builds keep `config.json` and `logs/` in
+`%APPDATA%\flowtype\` (Program Files isn't writable); `paths.py` handles the
+source-vs-frozen split. End-user instructions: `docs/mum-setup.md`.
+
 ## Configuration
 
 Settings live in `config.json`, not hardcoded constants:
@@ -80,7 +88,8 @@ pass runs.
 
 ## Notes
 
-- First run downloads the `base.en` Whisper model (~150MB) to the HF cache.
+- Running from source, first run downloads the `base.en` Whisper model
+  (~150MB) to the HF cache. The installer build bundles it instead.
 - Clipboard is saved and restored around the paste — dictating doesn't
   destroy whatever you had copied.
 - Only one instance can run at a time (Windows named mutex) — a second
@@ -102,10 +111,11 @@ venv\Scripts\pip install -r requirements-dev.txt
 venv\Scripts\python.exe -m pytest -v
 ```
 
-21 tests across `test_flowtype.py` (clipboard restore, mic-open failure,
+Tests across `test_flowtype.py` (clipboard restore, mic-open failure,
 transcription failure, double-stop safety, the watchdog, transcript
 logging, the LLM cleanup on/off integration, the singleton mutex),
-`test_config.py` (missing/malformed/partial config.json), and
+`test_config.py` (missing/malformed/partial config.json),
+`test_paths.py` (source-vs-frozen path split, first-run config seeding), and
 `test_llm_cleanup.py` (Ollama unreachable, timeout, HTTP error, unreliable
 reply, malformed JSON — every failure mode falls back to the raw
 transcript). Not a full suite, just what's broken or could break.
