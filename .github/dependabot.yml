@@ -7,6 +7,14 @@ updates:
     groups:
       all:
         patterns: ["*"]
+    ignore:
+      # numpy 2.x requires Python >=3.12; CI + the PyInstaller bundle are on 3.11.
+      # faster-whisper 1.2.x pulls numpy 2 transitively. Revisit both together
+      # when flowtype moves to 3.12 deliberately.
+      - dependency-name: "numpy"
+        versions: [">=2.0.0"]
+      - dependency-name: "faster-whisper"
+        versions: [">=1.1.0"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
