@@ -35,7 +35,7 @@ Settings live in `config.json`, not hardcoded constants:
   "beam_size": 1,
   "condition_on_previous_text": false,
   "append_trailing_space": true,
-  "known_terms": ["Claude Code", "flowtype", "Ops Center", "RCP", "ratoon", "CCS"],
+  "known_terms": ["Claude Code", "flowtype", "Ops Center", "ratoon", "..."],
   "llm_cleanup": {
     "enabled": false,
     "model": "qwen2.5:3b"

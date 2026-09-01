@@ -31,7 +31,18 @@ class LLMCleanupConfig:
     known_terms: list = field(default_factory=list)
 
 
-DEFAULT_KNOWN_TERMS = ["Claude Code", "flowtype", "Ops Center", "RCP", "ratoon", "CCS"]
+# Seed glossary — proper nouns and jargon Whisper reliably mishears. Kept
+# deliberately short: `hotwords` is a decoding bias, and everyday words in
+# here cause false positives (a common word forced to a rare term). Add the
+# names/terms you actually dictate; don't pad it.
+DEFAULT_KNOWN_TERMS = [
+    "Claude Code", "flowtype", "ProjectVault", "Obsidian", "Ollama", "faster-whisper",
+    "Tailscale", "WSL", "Godot", "FreeCAD", "Bambu", "NotebookLM", "T3RRA",
+    "RCP", "Racecourse Projects", "Ops Center", "John Deere", "autosteer", "AB line", "RTK",
+    "ratoon", "ratooning", "CCS", "billet", "headland", "fallow", "plant cane",
+    "Marwood", "Blue Mountain", "Rangeview", "Clairview", "Homebush", "Mackay", "Burdekin",
+    "Lili Dwyer",
+]
 
 
 @dataclass
