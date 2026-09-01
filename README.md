@@ -32,16 +32,36 @@ Settings live in `config.json`, not hardcoded constants:
   "hotkeys": ["caps lock"],
   "model_size": "base.en",
   "max_record_seconds": 60,
+  "beam_size": 1,
+  "condition_on_previous_text": false,
+  "append_trailing_space": true,
+  "known_terms": ["Claude Code", "flowtype", "Ops Center", "RCP", "ratoon", "CCS"],
   "llm_cleanup": {
     "enabled": false,
-    "model": "qwen2.5:3b",
-    "known_terms": ["Claude Code", "flowtype", "..."]
+    "model": "qwen2.5:3b"
   }
 }
 ```
 
 Missing file or missing/malformed individual keys all fall back to defaults
 independently — a partial config never crashes startup.
+
+### Transcription tuning
+
+- **`known_terms`** is passed to Whisper as `hotwords` — a decoding bias
+  toward that vocabulary, at no latency cost. This is what fixes the
+  "cloud code" / "cloth code" → **"Claude Code"** miss that the optional LLM
+  pass below never reliably could (confirmed on `bench/test_audio.wav`).
+  Edit this list to match the jargon and names you dictate.
+- **`beam_size`** defaults to `1` (faster-whisper's own default is `5`).
+  On short dictation clips beam=1 is ~20% faster to decode with no
+  measurable accuracy loss; raise it if you dictate long passages and want
+  the extra search.
+- **`condition_on_previous_text: false`** drops cross-segment context —
+  slightly faster, and avoids the occasional runaway word-repetition on a
+  single utterance.
+- **`append_trailing_space`** adds one space after each paste so
+  back-to-back dictations don't collide. Set `false` to paste verbatim.
 
 `hotkeys` accepts a list — any key in it triggers recording, so one config
 can work across keyboards that don't all have the same keys. Caps Lock was

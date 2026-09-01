@@ -140,7 +140,15 @@ def stop_recording_and_transcribe(model: WhisperModel):
             return
 
         print(f"[flowtype] transcribing {duration:.1f}s...")
-        segments, _info = model.transcribe(audio, language="en", vad_filter=True)
+        hotwords = " ".join(CFG.known_terms) if CFG.known_terms else None
+        segments, _info = model.transcribe(
+            audio,
+            language="en",
+            vad_filter=True,
+            beam_size=CFG.beam_size,
+            condition_on_previous_text=CFG.condition_on_previous_text,
+            hotwords=hotwords,
+        )
         text = "".join(segment.text for segment in segments).strip()
 
         if not text:
@@ -158,7 +166,7 @@ def stop_recording_and_transcribe(model: WhisperModel):
             text = cleaned
 
         _log_transcript(text)
-        _paste(text)
+        _paste(text + " " if CFG.append_trailing_space else text)
     except Exception as e:
         _report_error(f"transcription failed: {e}")
     finally:

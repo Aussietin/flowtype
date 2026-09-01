@@ -31,6 +31,9 @@ class LLMCleanupConfig:
     known_terms: list = field(default_factory=list)
 
 
+DEFAULT_KNOWN_TERMS = ["Claude Code", "flowtype", "Ops Center", "RCP", "ratoon", "CCS"]
+
+
 @dataclass
 class Config:
     hotkeys: list = field(default_factory=lambda: ["caps lock"])
@@ -40,6 +43,20 @@ class Config:
     compute_type: str = "int8"
     max_record_seconds: int = 60
     clipboard_restore_delay: float = 0.25
+    # Transcription tuning. beam_size=1 (faster-whisper's default is 5) roughly
+    # halves decode time on short dictation clips for negligible accuracy cost;
+    # condition_on_previous_text=False drops the cross-segment context that
+    # occasionally causes runaway repetition on a single short utterance.
+    # known_terms is fed to Whisper as `hotwords` — a decoding bias toward this
+    # vocabulary, at zero latency cost and no Ollama (the llm_cleanup pass tried
+    # to fix the same "cloud code"->"Claude Code" class of miss, less reliably).
+    beam_size: int = 1
+    condition_on_previous_text: bool = False
+    known_terms: list = field(default_factory=lambda: list(DEFAULT_KNOWN_TERMS))
+    # Whisper strips trailing whitespace; without this, back-to-back dictations
+    # collide ("...done.Next item...") and the cursor sits flush against the
+    # last word every time.
+    append_trailing_space: bool = True
     llm_cleanup: LLMCleanupConfig = field(default_factory=LLMCleanupConfig)
 
 
@@ -54,14 +71,21 @@ def load_config() -> Config:
         print(f"[flowtype] config.json unreadable ({e}), using defaults")
         return defaults
 
+    # One glossary, top-level. Falls back to a legacy llm_cleanup.known_terms
+    # for configs written before it moved out, then to the built-in default.
     llm_raw = raw.get("llm_cleanup", {}) or {}
+    known_terms = raw.get(
+        "known_terms",
+        llm_raw.get("known_terms", list(defaults.known_terms)),
+    )
+
     llm_defaults = LLMCleanupConfig()
     llm = LLMCleanupConfig(
         enabled=llm_raw.get("enabled", llm_defaults.enabled),
         ollama_host=llm_raw.get("ollama_host", llm_defaults.ollama_host),
         model=llm_raw.get("model", llm_defaults.model),
         timeout_seconds=llm_raw.get("timeout_seconds", llm_defaults.timeout_seconds),
-        known_terms=llm_raw.get("known_terms", llm_defaults.known_terms),
+        known_terms=known_terms,
     )
     hotkeys = raw.get("hotkeys")
     if hotkeys is None:
@@ -76,5 +100,9 @@ def load_config() -> Config:
         compute_type=raw.get("compute_type", defaults.compute_type),
         max_record_seconds=raw.get("max_record_seconds", defaults.max_record_seconds),
         clipboard_restore_delay=raw.get("clipboard_restore_delay", defaults.clipboard_restore_delay),
+        beam_size=raw.get("beam_size", defaults.beam_size),
+        condition_on_previous_text=raw.get("condition_on_previous_text", defaults.condition_on_previous_text),
+        known_terms=known_terms,
+        append_trailing_space=raw.get("append_trailing_space", defaults.append_trailing_space),
         llm_cleanup=llm,
     )

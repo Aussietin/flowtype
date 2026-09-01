@@ -45,7 +45,7 @@ class FakeModel:
     def __init__(self, text=""):
         self._text = text
 
-    def transcribe(self, audio, language="en", vad_filter=True):
+    def transcribe(self, audio, language="en", vad_filter=True, **kwargs):
         if self._text:
             return [FakeSegment(self._text)], None
         return [], None
@@ -108,7 +108,7 @@ def test_start_recording_refuses_when_no_stream_available():
 
 def test_transcription_failure_reports_error_and_resets_status():
     class BoomModel:
-        def transcribe(self, audio, language="en", vad_filter=True):
+        def transcribe(self, audio, language="en", vad_filter=True, **kwargs):
             raise RuntimeError("ctranslate2 exploded")
 
     flowtype._recording = True
@@ -126,7 +126,7 @@ def test_double_stop_only_transcribes_once():
     class TrackingModel:
         calls = 0
 
-        def transcribe(self, audio, language="en", vad_filter=True):
+        def transcribe(self, audio, language="en", vad_filter=True, **kwargs):
             TrackingModel.calls += 1
             return [], None
 
@@ -194,7 +194,7 @@ def test_llm_cleanup_runs_when_enabled_and_status_shows_cleaning(monkeypatch):
     flowtype.stop_recording_and_transcribe(FakeModel(text="lower case text"))
 
     assert seen_status_during_cleanup == ["cleaning"]
-    assert copied[0] == "LOWER CASE TEXT"
+    assert copied[0] == "LOWER CASE TEXT "  # trailing space appended at paste
 
 
 def test_llm_cleanup_skipped_when_disabled(monkeypatch):
@@ -212,7 +212,46 @@ def test_llm_cleanup_skipped_when_disabled(monkeypatch):
     flowtype._frames = [np.zeros((16000, 1), dtype=np.float32)]
     flowtype.stop_recording_and_transcribe(FakeModel(text="raw text"))
 
-    assert copied[0] == "raw text"
+    assert copied[0] == "raw text "  # trailing space appended at paste
+
+
+def test_transcribe_gets_tuning_params_and_hotwords(monkeypatch):
+    """beam_size, condition_on_previous_text and the known_terms glossary
+    (as `hotwords`) must reach faster-whisper's transcribe()."""
+    seen = {}
+    monkeypatch.setattr(flowtype.keyboard, "send", lambda combo: None)
+    monkeypatch.setattr(flowtype.pyperclip, "copy", lambda t: None)
+    monkeypatch.setattr(flowtype.pyperclip, "paste", lambda: "unrelated")
+    monkeypatch.setattr(flowtype.CFG, "known_terms", ["Claude Code", "ratoon"])
+    monkeypatch.setattr(flowtype.CFG, "beam_size", 1)
+    monkeypatch.setattr(flowtype.CFG, "condition_on_previous_text", False)
+
+    class CapturingModel:
+        def transcribe(self, audio, language="en", vad_filter=True, **kwargs):
+            seen.update(kwargs)
+            return [FakeSegment("hello")], None
+
+    flowtype._recording = True
+    flowtype._frames = [np.zeros((16000, 1), dtype=np.float32)]
+    flowtype.stop_recording_and_transcribe(CapturingModel())
+
+    assert seen["beam_size"] == 1
+    assert seen["condition_on_previous_text"] is False
+    assert seen["hotwords"] == "Claude Code ratoon"
+
+
+def test_trailing_space_disabled(monkeypatch):
+    copied = []
+    monkeypatch.setattr(flowtype.pyperclip, "copy", lambda t: copied.append(t))
+    monkeypatch.setattr(flowtype.pyperclip, "paste", lambda: "unrelated")
+    monkeypatch.setattr(flowtype.keyboard, "send", lambda combo: None)
+    monkeypatch.setattr(flowtype.CFG, "append_trailing_space", False)
+
+    flowtype._recording = True
+    flowtype._frames = [np.zeros((16000, 1), dtype=np.float32)]
+    flowtype.stop_recording_and_transcribe(FakeModel(text="no space please"))
+
+    assert copied[0] == "no space please"
 
 
 def test_singleton_mutex_detects_second_instance():
