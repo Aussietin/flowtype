@@ -4,3 +4,7 @@ __pycache__/
 .pytest_cache/
 logs/
 bench/test_audio.wav
+
+# Build artifacts
+build/
+installer-output/
