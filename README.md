@@ -20,8 +20,10 @@ venv\Scripts\python.exe flowtype.py
 ```
 
 Hold **Caps Lock** (or any configured hotkey), speak, release — the
-transcript is pasted at your cursor in whatever window has focus. Tap
-**Esc** twice to quit.
+transcript is pasted at your cursor in whatever window has focus.
+
+Right-click the tray diamond for **Settings…**, **Restart flowtype** (applies
+changed settings), and **Quit**. Tapping **Esc** twice also quits.
 
 ## Installer (for a non-technical machine)
 
@@ -31,9 +33,19 @@ never downloads anything. Frozen builds keep `config.json` and `logs/` in
 `%APPDATA%\flowtype\` (Program Files isn't writable); `paths.py` handles the
 source-vs-frozen split. End-user instructions: `docs/mum-setup.md`.
 
+## Settings window
+
+Right-click the tray icon → **Settings…** opens a small editor for the common
+options — hotkey(s) (with a "Detect keypress" helper and validation), model,
+quit key, max hold, search beams, trailing space, and the known-terms
+glossary, plus the optional LLM cleanup pass. It writes `config.json` (keys it
+doesn't manage are left untouched); changes apply after **Restart flowtype**
+in the same menu. It's also runnable on its own: `python flowtype.py --settings`.
+
 ## Configuration
 
-Settings live in `config.json`, not hardcoded constants:
+Everything the settings window edits — and a few things it doesn't — lives in
+`config.json`:
 
 ```json
 {
@@ -113,7 +125,9 @@ pass runs.
 - Clipboard is saved and restored around the paste — dictating doesn't
   destroy whatever you had copied.
 - Only one instance can run at a time (Windows named mutex) — a second
-  launch shows a message box and exits instead of double-pasting.
+  launch waits ~3s for the first to exit (covers a "Restart flowtype" and the
+  occasional login double-start), then shows a message box and exits instead
+  of double-pasting.
 - A held hotkey auto-stops and transcribes after `max_record_seconds`
   (default 60s) so a forgotten hold can't run away with memory.
 - Every transcript is appended to `logs/transcripts.jsonl` (gitignored,
@@ -135,7 +149,9 @@ Tests across `test_flowtype.py` (clipboard restore, mic-open failure,
 transcription failure, double-stop safety, the watchdog, transcript
 logging, the LLM cleanup on/off integration, the singleton mutex),
 `test_config.py` (missing/malformed/partial config.json),
-`test_paths.py` (source-vs-frozen path split, first-run config seeding), and
+`test_paths.py` (source-vs-frozen path split, first-run config seeding),
+`test_settings_gui.py` (config.json round-trip keeps unknown keys, hotkey and
+quit-key validation, legacy-key drop, glossary parsing), and
 `test_llm_cleanup.py` (Ollama unreachable, timeout, HTTP error, unreliable
 reply, malformed JSON — every failure mode falls back to the raw
 transcript). Not a full suite, just what's broken or could break.

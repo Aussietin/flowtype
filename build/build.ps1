@@ -8,9 +8,11 @@ $py = Join-Path $root "venv\Scripts\python.exe"
 
 Write-Host "==> fetching model" -ForegroundColor Cyan
 & $py build\fetch_model.py
+if ($LASTEXITCODE -ne 0) { throw "fetch_model failed ($LASTEXITCODE)" }
 
 Write-Host "==> freezing with PyInstaller" -ForegroundColor Cyan
 & $py -m PyInstaller flowtype.spec --noconfirm --distpath build\dist --workpath build\work
+if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed ($LASTEXITCODE)" }
 
 Write-Host "==> building installer" -ForegroundColor Cyan
 $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
@@ -20,7 +22,8 @@ foreach ($cand in @(
     "$env:ProgramFiles\Inno Setup 6\ISCC.exe")) {
   if (-not $iscc -and (Test-Path $cand)) { $iscc = $cand }
 }
-if (-not $iscc -or -not (Test-Path $iscc)) { throw "iscc not found — winget install JRSoftware.InnoSetup" }
+if (-not $iscc -or -not (Test-Path $iscc)) { throw "iscc not found -- winget install JRSoftware.InnoSetup" }
 & $iscc installer.iss
+if ($LASTEXITCODE -ne 0) { throw "iscc failed ($LASTEXITCODE)" }
 
 Write-Host "==> done: installer-output\flowtype-setup.exe" -ForegroundColor Green
