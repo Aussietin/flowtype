@@ -12,12 +12,16 @@ Usage:
 Hold the configured hotkey(s) to talk, release to paste. Tray icon: grey = idle, red =
 recording, amber = transcribing, blue = LLM cleanup pass (if enabled),
 flashing red "!" = something errored (also fires a toast). Right-click the
-tray icon to quit, or tap Esc twice as a fallback (works even without the
-console open).
+tray icon for Settings…, Restart, and Quit, or tap Esc twice as a fallback
+(works even without the console open).
+
+Run with --settings to open the settings window on its own — this is what the
+tray "Settings…" item does, so it also works from the frozen build.
 """
 import ctypes
 import json
 import os
+import subprocess
 import sys
 import threading
 import time
@@ -30,6 +34,15 @@ if sys.stdout is None:
     sys.stdout = open(os.devnull, "w")
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
+
+# Settings window: dispatch here, before the heavy audio/Whisper imports, so
+# it opens fast (and the frozen flowtype.exe doesn't spin up the model just to
+# show a dialog). settings_gui only needs tkinter + keyboard + config.
+if __name__ == "__main__" and "--settings" in sys.argv[1:]:
+    import settings_gui
+
+    settings_gui.main()
+    sys.exit(0)
 
 import keyboard
 import numpy as np
@@ -233,16 +246,56 @@ def poll() -> State:
                  menu_label=f"Idle — hold {_hotkey_display} to talk")
 
 
+_restart_requested = False
+
+
 def _acquire_singleton_or_exit():
-    """Windows named mutex — refuse to start a second instance."""
+    """Windows named mutex — refuse to start a second instance.
+
+    Retries for a few seconds first: on a "Restart flowtype" the old process
+    is still tearing down when the new one launches, and Windows has been seen
+    to start two copies at once on login (both then grab the hotkey). A short
+    wait lets the outgoing instance release the mutex instead of the new one
+    bailing out.
+    """
     kernel32 = ctypes.windll.kernel32
     ERROR_ALREADY_EXISTS = 183
-    kernel32.CreateMutexW(None, False, "Global\\flowtype_singleton")
-    if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
-        ctypes.windll.user32.MessageBoxW(
-            0, "flowtype is already running (check the system tray).",
-            "flowtype", 0x40)
-        sys.exit(0)
+    for attempt in range(12):  # ~3.6s total
+        handle = kernel32.CreateMutexW(None, False, "Global\\flowtype_singleton")
+        if kernel32.GetLastError() != ERROR_ALREADY_EXISTS:
+            return
+        kernel32.CloseHandle(handle)
+        if attempt == 0:
+            print("[flowtype] another instance is still running, waiting for it to exit...")
+        time.sleep(0.3)
+    ctypes.windll.user32.MessageBoxW(
+        0, "flowtype is already running (check the system tray).",
+        "flowtype", 0x40)
+    sys.exit(0)
+
+
+def _open_settings(_icon=None):
+    """Launch the settings window as its own process so a crash in the Tk
+    dialog can't take the tray down. Works frozen (sys.executable is
+    flowtype.exe, which re-dispatches on --settings) and from source."""
+    args = [sys.executable]
+    if not getattr(sys, "frozen", False):
+        args.append(os.path.abspath(__file__))
+    args.append("--settings")
+    try:
+        subprocess.Popen(args, close_fds=True)
+    except Exception as e:
+        _report_error(f"couldn't open settings: {e}")
+
+
+def _request_restart(icon):
+    """Tear the tray down cleanly; main() relaunches once run() returns, so
+    the mutex is fully released before the new process starts."""
+    global _restart_requested
+    _restart_requested = True
+    icon.stop()
+
+
 
 
 def main():
@@ -289,7 +342,16 @@ def main():
 
     keyboard.on_press_key(CFG.quit_key, _on_esc)
 
-    Indicator("flowtype", poll, poll_seconds=1, shape="diamond").run()
+    Indicator("flowtype", poll, poll_seconds=1, shape="diamond",
+              extra_items=(("Settings…", _open_settings),
+                           ("Restart flowtype", _request_restart))).run()
+
+    if _restart_requested:
+        print("[flowtype] restarting to pick up new settings...")
+        args = [sys.executable]
+        if not getattr(sys, "frozen", False):
+            args.append(os.path.abspath(__file__))
+        subprocess.Popen(args, close_fds=True)
 
 
 if __name__ == "__main__":

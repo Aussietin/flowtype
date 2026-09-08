@@ -16,7 +16,9 @@ datas = [
     ("assets/icon.ico", "assets"),
 ]
 binaries = []
-hiddenimports = ["pystray._win32"]
+# settings_gui is imported lazily (inside flowtype.py's __main__ guard and via a
+# --settings subprocess), so name it explicitly for PyInstaller's static scan.
+hiddenimports = ["pystray._win32", "settings_gui"]
 
 # Native-heavy deps: grab everything (python modules, data, DLLs).
 for pkg in ("ctranslate2", "av", "faster_whisper", "onnxruntime", "sounddevice"):
@@ -39,7 +41,7 @@ a = Analysis(
     hiddenimports=hiddenimports,
     hookspath=[],
     runtime_hooks=[],
-    excludes=["tkinter", "matplotlib", "pytest"],
+    excludes=["matplotlib", "pytest"],  # tkinter is needed by the settings window
     noarchive=False,
 )
 pyz = PYZ(a.pure)
