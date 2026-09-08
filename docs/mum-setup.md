@@ -18,11 +18,18 @@ computer; nothing is sent anywhere.
 
 ## Using it
 
-- **Hold the Right Ctrl key**, speak a sentence, then **let go**. A second later
+- **Hold the Caps Lock key**, speak a sentence, then **let go**. A second later
   the text is typed at your cursor.
 - The tray diamond changes colour while it works: **red** = listening,
   **amber** = writing it out, **grey** = ready again.
-- Laptop with no Right Ctrl key? It also works with **Right Alt**.
+- While flowtype is running, tapping Caps Lock won't toggle capitals — it's the
+  talk key now. You can change which key it uses in Settings (below).
+
+## Settings
+
+Right-click the tray diamond → **Settings…**. You can change the talk key, pick
+a different model, and add names or words it keeps getting wrong. After you
+save, choose **Restart flowtype** from the same menu for the change to apply.
 
 ## First time you talk
 
@@ -32,7 +39,8 @@ and reopen from the Start menu, then allow the microphone.
 
 ## Quitting / reopening
 
-- Right-click the tray diamond → **Quit**.
+- Right-click the tray diamond → **Quit**. (**Restart flowtype** on that menu
+  relaunches it without a full quit — use it after changing settings.)
 - Reopen from **Start menu → flowtype**.
 
 ## If something's wrong

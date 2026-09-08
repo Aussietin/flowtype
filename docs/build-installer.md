@@ -40,10 +40,12 @@ On a clean Windows account (or VM):
 
 1. Run `flowtype-setup.exe` — no UAC prompt (per-user).
 2. Start Menu → flowtype → launches, tray shows the grey diamond.
-3. Hold Right Ctrl, speak, release → text pastes at the cursor.
+3. Hold Caps Lock, speak, release → text pastes at the cursor.
 4. Deny microphone access once → red "!" tray icon + toast (not a silent failure).
 5. `%APPDATA%\flowtype\config.json` and `logs\transcripts.jsonl` exist and are written.
-6. Uninstall → Start Menu entry, install dir, and the logs dir are gone.
+6. Right-click tray → Settings… opens; change the hotkey, Save, Restart flowtype
+   → the new key works.
+7. Uninstall → Start Menu entry, install dir, and the logs dir are gone.
 
 ## Notes
 
