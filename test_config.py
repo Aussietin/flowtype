@@ -3,7 +3,7 @@ malformed file all have to fall back to sane defaults."""
 import json
 
 import config as config_module
-from config import Config, LLMCleanupConfig, load_config
+from config import Config, load_config
 
 
 def test_missing_file_returns_defaults(tmp_path, monkeypatch):
@@ -29,7 +29,9 @@ def test_partial_config_merges_with_defaults(tmp_path, monkeypatch):
     cfg = load_config()
     assert cfg.model_size == "small.en"
     assert cfg.hotkeys == ["caps lock"]  # untouched default
-    assert cfg.llm_cleanup == LLMCleanupConfig()  # untouched default
+    assert cfg.beam_size == 1  # untouched default
+    assert cfg.llm_cleanup.enabled is False  # untouched default
+    assert cfg.llm_cleanup.model == "qwen2.5:3b"  # untouched default
 
 
 def test_partial_llm_cleanup_block_merges_with_defaults(tmp_path, monkeypatch):
