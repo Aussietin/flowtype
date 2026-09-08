@@ -16,10 +16,10 @@ flowtype.py hooks it with suppress=True so holding it doesn't also toggle
 caps state — the tradeoff is losing the real caps-lock-toggle while
 flowtype is running."""
 import json
+import shutil
 from dataclasses import dataclass, field
-from pathlib import Path
 
-CONFIG_PATH = Path(__file__).resolve().parent / "config.json"
+from paths import CONFIG_PATH, DEFAULT_CONFIG_PATH, FROZEN
 
 
 @dataclass
@@ -46,7 +46,17 @@ class Config:
 def load_config() -> Config:
     defaults = Config()
     if not CONFIG_PATH.exists():
-        return defaults
+        # First run of an installed build: seed the user's config.json from the
+        # bundled default so it's there to edit. (In a source checkout the two
+        # paths are the same file, so this is skipped.)
+        if FROZEN and DEFAULT_CONFIG_PATH.exists() and DEFAULT_CONFIG_PATH != CONFIG_PATH:
+            try:
+                shutil.copyfile(DEFAULT_CONFIG_PATH, CONFIG_PATH)
+            except Exception as e:
+                print(f"[flowtype] couldn't seed config.json ({e}), using defaults")
+                return defaults
+        else:
+            return defaults
 
     try:
         raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))

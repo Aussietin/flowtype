@@ -4,3 +4,9 @@ __pycache__/
 .pytest_cache/
 logs/
 bench/test_audio.wav
+
+# installer build artefacts (see docs/build-installer.md)
+build/model/
+build/dist/
+build/work/
+installer-output/
