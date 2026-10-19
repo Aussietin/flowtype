@@ -1,10 +1,11 @@
 # flowtype
 
-Local hold-to-talk dictation. A Wispr Flow clone with no subscription and no
-audio leaving the machine — transcription runs on-device via
-[faster-whisper](https://github.com/SYSTRAN/faster-whisper). Zero network
-calls of its own; the only network activity anywhere is faster-whisper's
-one-time Whisper model download (free, public, no API key).
+Local hold-to-talk dictation with no subscription and no audio leaving the
+machine. Transcription runs on-device via
+[faster-whisper](https://github.com/SYSTRAN/faster-whisper). flowtype makes
+no network calls of its own. Running from source, faster-whisper downloads the
+Whisper model once (free, public, no API key); the installer bundles the model,
+so an installed copy never downloads anything.
 
 ## Setup
 
@@ -55,7 +56,7 @@ Everything the settings window edits — and a few things it doesn't — lives i
   "beam_size": 1,
   "condition_on_previous_text": false,
   "append_trailing_space": true,
-  "known_terms": ["Claude Code", "flowtype", "Ops Center", "ratoon", "..."],
+  "known_terms": ["flowtype", "GitHub", "..."],
   "llm_cleanup": {
     "enabled": false,
     "model": "qwen2.5:3b"
@@ -102,7 +103,7 @@ endpoint at `ollama_host`) before pasting — fixes filler words/punctuation
 and can correct terms in `known_terms` if Whisper mishears them.
 
 **Honest result from testing (2026-08-04):** it reliably cleans up simple
-filler words and fixed some jargon ("raton"→"ratoon", "ccs"→"CCS"), but is
+filler words and fixed some jargon and acronyms, but is
 **not reliable** for the specific case that motivated it — correcting
 "cloud code"/"cloth code" back to "Claude Code". `qwen2.5:3b` missed it
 consistently across multiple tries, and a more explicit prompt with
@@ -162,6 +163,19 @@ Windows only. Hotkey capture (`keyboard`), audio (`sounddevice`), the tray
 icon (`pystray`) and the clipboard paste path are all wired for Windows;
 Linux/macOS would need ported equivalents.
 
+## Privacy
+
+- Audio is recorded only while the hotkey is held, transcribed on this
+  machine and discarded. Nothing is uploaded and there is no telemetry.
+- Every transcript is appended **in plain text** to
+  `%APPDATA%\flowtype\logs\transcripts.jsonl` (installed build) or
+  `logs/transcripts.jsonl` (source run). Anyone with access to your Windows
+  account can read it. Delete the file at any time; uninstalling removes the
+  `logs` folder.
+- The optional LLM cleanup pass (off by default) sends the transcript to the
+  Ollama server set in `ollama_host`, which defaults to this machine.
+
 ## License
 
-MIT
+MIT for the flowtype source (see `LICENSE`). The installed build also ships
+`EULA.txt` and `THIRD-PARTY-NOTICES.txt` for the bundled components.

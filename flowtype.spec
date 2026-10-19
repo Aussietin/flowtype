@@ -43,6 +43,9 @@ a = Analysis(
     runtime_hooks=[],
     excludes=["matplotlib", "pytest"],  # tkinter is needed by the settings window
     noarchive=False,
+    # pystray is LGPL-3.0: ship it as plain .py files under _internal\pystray
+    # (not inside the PYZ archive) so a user can swap in a modified copy.
+    module_collection_mode={"pystray": "py"},
 )
 pyz = PYZ(a.pure)
 

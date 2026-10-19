@@ -1,0 +1,51 @@
+flowtype - Third-party notices
+==============================
+
+flowtype bundles the components below. Each is used under its own licence.
+The full licence text of every bundled Python package is appended to this file
+by the release build (see .github/workflows/release.yml), taken from each
+package's own metadata.
+
+Speech model
+------------
+- Whisper base.en (OpenAI), converted to CTranslate2 format by SYSTRAN as
+  Systran/faster-whisper-base.en. MIT License.
+  Copyright (c) 2022 OpenAI.
+  https://github.com/openai/whisper
+  https://huggingface.co/Systran/faster-whisper-base.en
+- Silero VAD model (bundled inside faster-whisper). MIT License.
+  Copyright (c) 2020-present Silero Team.
+  https://github.com/snakers4/silero-vad
+
+Python packages
+---------------
+- faster-whisper - MIT - https://github.com/SYSTRAN/faster-whisper
+- CTranslate2 - MIT - https://github.com/OpenNMT/CTranslate2
+- ONNX Runtime - MIT - https://github.com/microsoft/onnxruntime
+- tokenizers / huggingface_hub - Apache-2.0 - https://github.com/huggingface
+- sounddevice - MIT - https://github.com/spatialaudio/python-sounddevice
+  (bundles PortAudio, MIT-style licence - http://www.portaudio.com)
+- keyboard - MIT - https://github.com/boppreh/keyboard
+- pyperclip - BSD-3-Clause - https://github.com/asweigart/pyperclip
+- requests - Apache-2.0 - https://github.com/psf/requests
+- NumPy - BSD-3-Clause - https://numpy.org
+- Pillow - MIT-CMU (HPND) - https://python-pillow.org
+- tqdm - MPL-2.0 / MIT - https://github.com/tqdm/tqdm
+- PyAV - BSD-3-Clause - https://github.com/PyAV-Org/PyAV
+  PyAV ships FFmpeg shared libraries (LGPL-2.1+) and codec libraries; see
+  https://github.com/PyAV-Org/pyav-ffmpeg for the exact build and sources.
+- pystray - LGPL-3.0 - https://github.com/moses-palmer/pystray
+  pystray is included as separate, unmodified files under
+  _internal\pystray\, so you may replace it with a modified version.
+  Its source code is available at
+  https://pypi.org/project/pystray/0.19.5/#files
+  The LGPL-3.0 text is at https://www.gnu.org/licenses/lgpl-3.0.txt and the
+  GPL-3.0 text it references at https://www.gnu.org/licenses/gpl-3.0.txt
+
+Runtime
+-------
+- Python 3.11 - PSF License - https://www.python.org
+- Tcl/Tk (tkinter) - Tcl/Tk License - https://www.tcl.tk
+- PyInstaller bootloader - GPL-2.0 with the PyInstaller bootloader exception,
+  which permits distributing frozen applications under any licence.
+  https://github.com/pyinstaller/pyinstaller
