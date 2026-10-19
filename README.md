@@ -1,5 +1,7 @@
 # flowtype
 
+Offline dictation for Windows. Your voice never leaves your PC. Pay once.
+
 Local hold-to-talk dictation with no subscription and no audio leaving the
 machine. Transcription runs on-device via
 [faster-whisper](https://github.com/SYSTRAN/faster-whisper). flowtype makes
