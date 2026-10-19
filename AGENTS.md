@@ -1,6 +1,6 @@
 # Agent instructions — flowtype
 
-Local hold-to-talk dictation (Wispr Flow clone, no subscription). Windows-only — hotkey,
+Local hold-to-talk dictation (offline, no subscription, pay once). Windows-only — hotkey,
 audio, tray, and clipboard-paste are all wired for Windows.
 
 - **Stack:** Python 3.11, faster-whisper (CTranslate2), sounddevice, keyboard, pystray,
