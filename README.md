@@ -75,7 +75,8 @@ independently — a partial config never crashes startup.
   toward that vocabulary, at no latency cost. This is what fixes the
   "cloud code" / "cloth code" → **"Claude Code"** miss that the optional LLM
   pass below never reliably could (confirmed on `bench/test_audio.wav`).
-  Edit this list to match the jargon and names you dictate.
+  Edit this list to match the jargon and names you dictate. The default is a
+  short generic seed; add your own names and terms in Settings.
 - **`beam_size`** defaults to `1` (faster-whisper's own default is `5`).
   On short dictation clips beam=1 is ~20% faster to decode with no
   measurable accuracy loss; raise it if you dictate long passages and want

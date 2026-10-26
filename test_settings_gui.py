@@ -84,10 +84,10 @@ def test_save_rejects_bad_quit_key(win, cfg_path):
 
 def test_known_terms_roundtrip_strips_blanks(win, cfg_path):
     win.terms_text.delete("1.0", tk.END)
-    win.terms_text.insert("1.0", "Claude Code\n\n  ratoon  \n\n")
+    win.terms_text.insert("1.0", "Claude Code\n\n  Zoom  \n\n")
     win._save()
     saved = json.loads(cfg_path.read_text(encoding="utf-8"))
-    assert saved["known_terms"] == ["Claude Code", "ratoon"]
+    assert saved["known_terms"] == ["Claude Code", "Zoom"]
 
 
 def test_llm_block_merges_not_replaces(win, cfg_path):
