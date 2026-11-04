@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "integ/**"]  # integ-only: throwaway combined-stack run
   pull_request:
 
 jobs:
