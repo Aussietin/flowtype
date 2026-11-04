@@ -10,12 +10,7 @@
   "condition_on_previous_text": false,
   "append_trailing_space": true,
   "known_terms": [
-    "Claude Code", "flowtype", "ProjectVault", "Obsidian", "Ollama", "faster-whisper",
-    "Tailscale", "WSL", "Godot", "FreeCAD", "Bambu", "NotebookLM", "T3RRA",
-    "RCP", "Racecourse Projects", "Ops Center", "John Deere", "autosteer", "AB line", "RTK",
-    "ratoon", "ratooning", "CCS", "billet", "headland", "fallow", "plant cane",
-    "Marwood", "Blue Mountain", "Rangeview", "Clairview", "Homebush", "Mackay", "Burdekin",
-    "Lili Dwyer"
+    "flowtype", "GitHub", "Python", "JavaScript", "Windows", "Wi-Fi", "PDF", "email"
   ],
   "llm_cleanup": {
     "enabled": false,

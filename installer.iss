@@ -19,6 +19,7 @@ PrivilegesRequired=lowest
 OutputDir=installer-output
 OutputBaseFilename=flowtype-setup
 SetupIconFile=assets\icon.ico
+LicenseFile=EULA.txt
 UninstallDisplayIcon={app}\{#AppExeName}
 Compression=lzma2
 SolidCompression=yes
@@ -31,6 +32,9 @@ Name: "startup"; Description: "Start flowtype automatically when I sign in"; Gro
 
 [Files]
 Source: "build\dist\flowtype\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdirs ignoreversion
+Source: "EULA.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"

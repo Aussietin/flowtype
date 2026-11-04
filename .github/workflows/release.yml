@@ -1,0 +1,100 @@
+name: Windows installer
+
+# Builds flowtype-setup.exe on a Windows runner (Inno Setup is Windows-only)
+# and uploads it with its SHA256 as a workflow artifact. Nothing is published.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "*.py"
+      - "flowtype.spec"
+      - "installer.iss"
+      - "config.json"
+      - "requirements.txt"
+      - "EULA.txt"
+      - "THIRD-PARTY-NOTICES.txt"
+      - "build/**"
+      - ".github/workflows/release.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller==6.22.3 pyinstaller-hooks-contrib pip-licenses==5.5.5
+
+      - name: Fetch the bundled model
+        run: python build\fetch_model.py
+
+      - name: Smoke test transcription on silence
+        run: |
+          python -c "import numpy as np; from faster_whisper import WhisperModel; m = WhisperModel('build/model/base.en', device='cpu', compute_type='int8'); segs, _ = m.transcribe(np.zeros(16000, dtype=np.float32)); print('segments:', list(segs))"
+
+      - name: Report bundled FFmpeg codec libraries
+        run: |
+          $libs = python -c "import av, pathlib; p = pathlib.Path(av.__file__).parent.parent / 'av.libs'; print('\n'.join(sorted(x.name for x in p.iterdir())))"
+          $libs
+          $gpl = $libs | Where-Object { $_ -match 'x264|x265' }
+          "## PyAV bundled libraries" >> $env:GITHUB_STEP_SUMMARY
+          if ($gpl) { "GPL codec DLLs present: $($gpl -join ', ')" >> $env:GITHUB_STEP_SUMMARY }
+          else { "No x264/x265 DLLs found." >> $env:GITHUB_STEP_SUMMARY }
+
+      - name: Append full licence texts to THIRD-PARTY-NOTICES.txt
+        run: |
+          $ignore = @('pyinstaller', 'pyinstaller-hooks-contrib', 'pip-licenses', 'altgraph', 'pefile',
+                      'pywin32-ctypes', 'setuptools', 'pip', 'packaging', 'prettytable', 'wcwidth', 'tomli')
+          "`r`n`r`nFull licence texts of bundled Python packages`r`n=============================================`r`n" |
+            Add-Content THIRD-PARTY-NOTICES.txt -Encoding utf8
+          pip-licenses --with-license-file --no-license-path --with-urls --format=plain-vertical --ignore-packages @ignore |
+            Add-Content THIRD-PARTY-NOTICES.txt -Encoding utf8
+
+      - name: Freeze with PyInstaller
+        run: |
+          python -m PyInstaller flowtype.spec --noconfirm --distpath build\dist --workpath build\work
+          if (-not (Test-Path build\dist\flowtype\_internal\pystray\__init__.py)) { throw "pystray not shipped as plain .py files" }
+
+      - name: Install Inno Setup if missing
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          if (-not (Test-Path $iscc)) { throw "ISCC.exe not found after install" }
+          "ISCC=$iscc" >> $env:GITHUB_ENV
+
+      - name: Build installer
+        run: |
+          & $env:ISCC installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "iscc failed ($LASTEXITCODE)" }
+
+      - name: SHA256
+        run: |
+          $f = "installer-output\flowtype-setup.exe"
+          $h = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
+          "$h  flowtype-setup.exe" | Set-Content installer-output\flowtype-setup.exe.sha256 -Encoding ascii -NoNewline
+          "SHA256: $h  size: $((Get-Item $f).Length) bytes" >> $env:GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: flowtype-setup
+          path: |
+            installer-output/flowtype-setup.exe
+            installer-output/flowtype-setup.exe.sha256
+          if-no-files-found: error
+          retention-days: 30
