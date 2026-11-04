@@ -14,11 +14,16 @@ Sources: `README.md`, `EULA.txt`, `docs/SHIPCHECK.md` (#10),
 ## The 10-minute run-through
 
 1. **Build to upload:** the `flowtype-setup` artifact from the Windows
-   installer CI run on the **merged** release stack (#8 → #11 → #13). If you
-   upload before merging, use run 41770943984 (#13 head; it expires
-   2026-12-04). **Never** upload the stale 23 Sep build in your local
-   `installer-output\` (see SHIPCHECK).
-2. Unzip it. Copy the hash out of `flowtype-setup.exe.sha256` and paste it
+   installer run on the **combined** release stack (#8 → #10 → #11 → #13 →
+   #14): run
+   [41779687765](https://github.com/Aussietin/flowtype/actions/runs/41779687765),
+   artifact 13297874140 (it expires 2026-12-04). If that has expired, or
+   anything else lands first, run the "Windows installer" workflow on `main`
+   after merging and use that artifact instead. **Never** upload the stale
+   23 Sep build in your local `installer-output\` (see SHIPCHECK).
+2. Unzip it. `flowtype-setup.exe.sha256` holds one line, written by the
+   workflow as `<64 lowercase hex chars>  flowtype-setup.exe` (two spaces, no
+   newline). Copy only the 64-character hash, not the file name, and paste it
    in place of `<SHA256>` in the Description (§3).
 3. *Optional, 15 min, recommended:* submit `flowtype-setup.exe` to the
    Defender portal first (TRUST-AUDIT §1a).
@@ -113,7 +118,7 @@ The keyboard hook can see every key press on the PC, but flowtype only acts on y
 **SHA256 of flowtype-setup.exe (v1.0.0):**
 `<SHA256>`
 
-To check it, open PowerShell in your Downloads folder and run `Get-FileHash flowtype-setup.exe`. The two strings should match.
+To check it, open PowerShell in your Downloads folder and run `(Get-FileHash .\flowtype-setup.exe).Hash.ToLower()`. The string it prints should match the one above. (Plain `Get-FileHash` shows the same hash in capitals.)
 
 ## Privacy
 
