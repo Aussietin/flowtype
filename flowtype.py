@@ -35,6 +35,14 @@ if sys.stdout is None:
 if sys.stderr is None:
     sys.stderr = open(os.devnull, "w")
 
+# The installed build bundles its model and must never touch the network.
+# huggingface_hub (pulled in by faster-whisper) reads these at import time, so
+# set them before that import: if the bundled model were ever missing, the
+# app errors out instead of silently downloading one.
+if getattr(sys, "frozen", False):
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
+
 # Settings window: dispatch here, before the heavy audio/Whisper imports, so
 # it opens fast (and the frozen flowtype.exe doesn't spin up the model just to
 # show a dialog). settings_gui only needs tkinter + keyboard + config.

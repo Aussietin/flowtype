@@ -174,7 +174,7 @@ Linux/macOS would need ported equivalents.
   `%APPDATA%\flowtype\logs\transcripts.jsonl` (installed build) or
   `logs/transcripts.jsonl` (source run). Anyone with access to your Windows
   account can read it. Delete the file at any time; uninstalling removes the
-  `logs` folder.
+  whole `%APPDATA%\flowtype` folder (transcript log and settings).
 - The optional LLM cleanup pass (off by default) sends the transcript to the
   Ollama server set in `ollama_host`, which defaults to this machine.
 

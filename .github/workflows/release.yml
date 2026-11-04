@@ -71,6 +71,19 @@ jobs:
           python -m PyInstaller flowtype.spec --noconfirm --distpath build\dist --workpath build\work
           if (-not (Test-Path build\dist\flowtype\_internal\pystray\__init__.py)) { throw "pystray not shipped as plain .py files" }
 
+      - name: Check exe metadata (version resource, not UPX-packed)
+        run: |
+          $v = (Get-Item build\dist\flowtype\flowtype.exe).VersionInfo
+          "flowtype.exe: $($v.CompanyName) / $($v.ProductName) / $($v.ProductVersion)" >> $env:GITHUB_STEP_SUMMARY
+          if (-not $v.CompanyName -or -not $v.ProductName -or -not $v.ProductVersion) { throw "flowtype.exe has no version resource" }
+          $packed = Get-ChildItem build\dist\flowtype -Recurse -Include *.exe,*.dll,*.pyd |
+            Where-Object {
+              $fs = [IO.File]::OpenRead($_.FullName); $buf = New-Object byte[] 1024
+              $n = $fs.Read($buf, 0, 1024); $fs.Close()
+              [Text.Encoding]::ASCII.GetString($buf, 0, $n) -match 'UPX[0!]'
+            }
+          if ($packed) { throw "UPX-packed binaries in the freeze: $($packed.Name -join ', ')" }
+
       - name: Install Inno Setup if missing
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
@@ -89,6 +102,8 @@ jobs:
           $h = (Get-FileHash $f -Algorithm SHA256).Hash.ToLower()
           "$h  flowtype-setup.exe" | Set-Content installer-output\flowtype-setup.exe.sha256 -Encoding ascii -NoNewline
           "SHA256: $h  size: $((Get-Item $f).Length) bytes" >> $env:GITHUB_STEP_SUMMARY
+          $sv = (Get-Item $f).VersionInfo
+          "flowtype-setup.exe: $($sv.CompanyName) / $($sv.ProductName) / $($sv.ProductVersion)" >> $env:GITHUB_STEP_SUMMARY
 
       - uses: actions/upload-artifact@v7
         with:

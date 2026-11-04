@@ -57,10 +57,16 @@ exe = EXE(
     name="flowtype",
     console=False,             # windowed — matches the pythonw launch
     icon="assets/icon.ico",
+    # Company/product/version metadata (Properties -> Details). See docs/TRUST-AUDIT.md.
+    version=str(SPEC_DIR / "build" / "version_info.txt"),
+    # Never UPX-pack: packed PE files are a classic AV heuristic trigger. PyInstaller
+    # already defaults to False; pinned so a copied spec snippet can't turn it on.
+    upx=False,
 )
 coll = COLLECT(
     exe,
     a.binaries,
     a.datas,
+    upx=False,
     name="flowtype",
 )
