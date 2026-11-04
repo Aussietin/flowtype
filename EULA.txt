@@ -1,0 +1,43 @@
+flowtype - End User Licence Agreement
+=====================================
+
+Copyright (c) 2026 Austin Crozier. All rights reserved except as stated below.
+
+By installing or using flowtype you agree to these terms. If you do not agree,
+do not install it, and uninstall it if you already have.
+
+1. Licence
+   You may install and use flowtype on computers you own or control, for
+   personal or commercial dictation work.
+
+2. Third-party components
+   flowtype includes third-party software and a speech model, each under its
+   own licence. Those licences are listed in THIRD-PARTY-NOTICES.txt, installed
+   next to flowtype.exe, and nothing in this agreement limits your rights under
+   them.
+
+3. Privacy
+   flowtype records audio only while you hold the hotkey and transcribes it on
+   your computer. It does not upload audio or text and has no telemetry.
+   Every transcript is saved in plain text to
+       %APPDATA%\flowtype\logs\transcripts.jsonl
+   Anyone with access to your Windows account can read that file. You can
+   delete it at any time; uninstalling flowtype removes the logs folder.
+   The optional LLM cleanup feature is off by default. If you turn it on, the
+   transcript is sent to the Ollama server named in your settings, which by
+   default runs on your own computer.
+
+4. No warranty
+   flowtype is provided "as is", without warranty of any kind, express or
+   implied, including fitness for a particular purpose. Check dictated text
+   before you rely on it. Nothing in this agreement excludes rights you have
+   under the Australian Consumer Law or other laws that cannot be excluded.
+
+5. Limitation of liability
+   To the extent the law allows, the author is not liable for any loss arising
+   from the use of, or inability to use, flowtype.
+
+6. Unsigned software
+   The installer is not code-signed. Windows SmartScreen or antivirus software
+   may warn you before it runs. The SHA256 checksum published with each
+   download lets you confirm the file is unchanged.
