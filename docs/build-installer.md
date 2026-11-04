@@ -45,7 +45,11 @@ On a clean Windows account (or VM):
 5. `%APPDATA%\flowtype\config.json` and `logs\transcripts.jsonl` exist and are written.
 6. Right-click tray → Settings… opens; change the hotkey, Save, Restart flowtype
    → the new key works.
-7. Uninstall → Start Menu entry, install dir, and the logs dir are gone.
+7. Uninstall while flowtype is running → the uninstaller asks you to quit it
+   first (AppMutex). Then: Start Menu entry, Startup shortcut, install dir, and
+   all of `%APPDATA%\flowtype` are gone.
+8. `flowtype.exe` and `flowtype-setup.exe` → Properties → Details show
+   company, product name and version 1.0.0.0 (not blank).
 
 ## Notes
 

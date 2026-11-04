@@ -21,6 +21,25 @@ OutputBaseFilename=flowtype-setup
 SetupIconFile=assets\icon.ico
 LicenseFile=EULA.txt
 UninstallDisplayIcon={app}\{#AppExeName}
+; Version resource on flowtype-setup.exe itself (Properties -> Details) - an
+; installer with blank metadata looks like a dropper to AV heuristics.
+AppCopyright=Copyright (c) 2026 {#AppPublisher}
+VersionInfoVersion={#AppVersion}
+VersionInfoCompany={#AppPublisher}
+VersionInfoDescription={#AppName} installer
+VersionInfoProductName={#AppName}
+VersionInfoProductVersion={#AppVersion}
+VersionInfoCopyright=Copyright (c) 2026 {#AppPublisher}
+; flowtype.py holds this mutex while running. Setup and the uninstaller check
+; it and ask the user to quit flowtype first, so the uninstall can't leave a
+; locked flowtype.exe (and a live keyboard hook) behind.
+AppMutex=Global\flowtype_singleton
+; Code signing (not bought yet - see docs/TRUST-AUDIT.md). Once there's a cert,
+; define a sign tool named "signtool" (Inno IDE: Tools -> Configure Sign Tools,
+; or iscc "/Ssigntool=signtool.exe sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 /a $f")
+; and uncomment both lines so setup.exe AND the uninstaller are signed.
+;SignTool=signtool
+;SignedUninstaller=yes
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -44,4 +63,7 @@ Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: startu
 Filename: "{app}\{#AppExeName}"; Description: "Start flowtype now"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{userappdata}\flowtype\logs"
+; Everything flowtype writes lives here: config.json (hotkeys, glossary) and
+; logs\transcripts.jsonl (plain-text history). Remove all of it so an uninstall
+; leaves no dictated text behind.
+Type: filesandordirs; Name: "{userappdata}\flowtype"

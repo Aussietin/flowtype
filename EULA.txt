@@ -22,7 +22,8 @@ do not install it, and uninstall it if you already have.
    Every transcript is saved in plain text to
        %APPDATA%\flowtype\logs\transcripts.jsonl
    Anyone with access to your Windows account can read that file. You can
-   delete it at any time; uninstalling flowtype removes the logs folder.
+   delete it at any time. Uninstalling flowtype removes the whole
+   %APPDATA%\flowtype folder, including that file and your settings.
    The optional LLM cleanup feature is off by default. If you turn it on, the
    transcript is sent to the Ollama server named in your settings, which by
    default runs on your own computer.
